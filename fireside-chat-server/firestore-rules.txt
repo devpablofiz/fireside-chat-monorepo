@@ -1,0 +1,23 @@
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Chat document rules
+    match /chats/{chatId} {
+      // Allow reading all chats for any authenticated user
+      allow get, list: if request.auth != null;
+
+      // Disallow writes from clients to ensure only server-side writes
+      allow write: if false;
+    }
+
+    // Messages within a chat
+    match /chats/{chatId}/messages/{messageId} {
+      // Allow reading messages only if the chat has not expired
+      allow get, list: if request.auth != null && exists(/databases/$(database)/documents/chats/$(chatId)) &&
+        get(/databases/$(database)/documents/chats/$(chatId)).data.expiresAt > request.time;
+
+      // Disallow writes from clients to ensure only server-side writes
+      allow write: if false;
+    }
+  }
+}
