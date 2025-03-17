@@ -6,6 +6,9 @@ module.exports = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                inter: ["Quicksand", "sans-serif"],
+            },
         },
     },
     plugins: [

@@ -41,7 +41,7 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
 app.post('/createChat', authenticateUser, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
         const { chatName } = req.body;
-        const userId = req.user?.uid;
+        const userId = req.user?.name;
 
         if (!chatName) {
             res.status(400).json({ error: 'Chat name is required' });
@@ -72,7 +72,7 @@ app.post('/createChat', authenticateUser, async (req: AuthenticatedRequest, res:
 app.post('/sendMessage', authenticateUser, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
         const { chatId, message } = req.body;
-        const userId = req.user?.uid;
+        const userId = req.user?.name;
 
         if (!chatId || !message) {
             res.status(400).json({ error: 'chatId and message are required' });
@@ -109,7 +109,7 @@ app.post('/sendMessage', authenticateUser, async (req: AuthenticatedRequest, res
 
         // Extend chat expiration time using Firestore server timestamp
         await chatRef.update({
-            expiresAt: admin.firestore.Timestamp.fromMillis(firestoreTime.toMillis() + 10 * 60 * 1000),
+            expiresAt: admin.firestore.Timestamp.fromMillis(chatData.expiresAt.toMillis() + 10 * 60 * 1000),
         });
 
         res.status(201).json({ message: 'Message sent successfully', messageId: messageRef.id });
