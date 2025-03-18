@@ -1,11 +1,13 @@
 import {useState} from "react";
 import {signInWithGoogle} from "../services/firebase.ts";
 import {useNavigate} from "react-router-dom";
+import {useNetworkStatus} from "../context/NetworkStatusProvider.tsx";
 
 const Login = ({onClose = () => null}: { onClose?: () => void }) => {
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(true);
     const navigate = useNavigate();
+    const {isOffline} = useNetworkStatus();
 
     const handleLogin = async () => {
         setLoading(true);
@@ -37,7 +39,7 @@ const Login = ({onClose = () => null}: { onClose?: () => void }) => {
                         <h1 className="text-lg sm:text-2xl font-bold mb-4 text-center">Sign in to continue</h1>
                         <button
                             onClick={handleLogin}
-                            disabled={loading}
+                            disabled={loading || isOffline}
                             className="text-sm sm:text-lg w-full flex items-center justify-center px-2 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-gray-400"
                         >
                             {loading ? "Signing in..." : "Sign in with Google"}

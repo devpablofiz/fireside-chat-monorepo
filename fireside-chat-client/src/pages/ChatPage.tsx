@@ -1,27 +1,37 @@
-import {useCallback, useEffect, useRef, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {collection, query, orderBy, onSnapshot, doc, getDoc} from "firebase/firestore";
-import {db} from "../services/firebase.ts";
-import {auth} from "../services/firebase";
-import {sendMessage} from "../services/api";
-import {Chat, Message} from "./ChatList.tsx";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { db } from "../services/firebase.ts";
+import { auth } from "../services/firebase";
+import { sendMessage } from "../services/api";
+import { Chat, Message } from "./ChatList.tsx";
 import Navbar from "../components/Navbar.tsx";
-import {formatDistanceToNow} from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
-import {useAuth} from "../context/AuthProvider.tsx";
+import { useAuth } from "../context/AuthProvider.tsx";
 import Login from "../components/Login.tsx";
+import { useNetworkStatus } from "../context/NetworkStatusProvider.tsx";
 
 const ChatPage = () => {
-    const {chatId} = useParams();
+    const { chatId } = useParams();
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [isExpired, setExpired] = useState(false);
     const navigate = useNavigate();
-    const {user} = useAuth();
+    const { user } = useAuth();
+    const { isOffline } = useNetworkStatus();
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const lastMessageId = useRef<string | null>(null);
+
+    useEffect(() => {
+        // Request permission for notifications
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         if (!chat) {
@@ -32,7 +42,6 @@ const ChatPage = () => {
         setExpired(expired);
     }, [chatId, chat]);
 
-    // Fetch chat details and Firestore server time
     const fetchChatData = useCallback(async () => {
         if (!chatId) return;
         try {
@@ -57,7 +66,7 @@ const ChatPage = () => {
     }, [chatId, isExpired]);
 
     const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messagesEndRef]);
 
     useEffect(() => {
@@ -76,11 +85,24 @@ const ChatPage = () => {
             const q = query(messagesRef, orderBy("timestamp", "asc"));
 
             const unsubscribe = onSnapshot(q, (snapshot) => {
-                setMessages(snapshot.docs.map((doc) => ({
+                const newMessages = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     message: doc.data().message,
                     userId: doc.data().userId,
-                })));
+                }));
+
+                // Check for new messages and notify
+                if (newMessages.length > 0) {
+                    const lastMessage = newMessages[newMessages.length - 1];
+
+                    if (lastMessage.id !== lastMessageId.current && lastMessage.userId !== auth.currentUser?.displayName) {
+                        showNotification(lastMessage.userId, lastMessage.message);
+                    }
+
+                    lastMessageId.current = lastMessage.id;
+                }
+
+                setMessages(newMessages);
             });
 
             const interval = setInterval(fetchChatData, 5000);
@@ -90,7 +112,16 @@ const ChatPage = () => {
                 clearInterval(interval);
             };
         }
-    }, [chatId, fetchChatData, scrollToBottom, user]);
+    }, [chatId, fetchChatData, navigate, scrollToBottom, user]);
+
+    const showNotification = (sender: string, message: string) => {
+        if ("Notification" in window && Notification.permission === "granted" && !document.hasFocus()) {
+            new Notification(`New message from ${sender}`, {
+                body: message,
+                icon: "/favicon-192x192.png",
+            });
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!message) return;
@@ -114,7 +145,7 @@ const ChatPage = () => {
     if (!chat) {
         return (
             <div>
-                <Navbar/>
+                <Navbar />
             </div>
         );
     }
@@ -126,21 +157,24 @@ const ChatPage = () => {
 
     return (
         <div>
-            {!user && (<Login/>)}
-            <Navbar/>
+            {!user && <Login />}
+            <Navbar />
             <div className="flex flex-col items-center px-6">
-                <img src={"/campfire.gif"} alt={"campfire"} className="w-12 sm:w-16 pixelated mb-2"/>
+                <img src={"/campfire.gif"} alt={"campfire"} className="w-12 sm:w-16 pixelated mb-2" />
                 <h2 className="text-4xl font-bold text-amber-900">Campfire "{chat.chatName}"</h2>
                 <h2 className="text-lg italic text-gray-900">Lit by {chat.userId}</h2>
                 <p className="text-lg text-gray-700 mt-2">
-                    Lit {formatDistanceToNow(chat.createdAt.toDate(), {addSuffix: true})}
+                    Lit {formatDistanceToNow(chat.createdAt.toDate(), { addSuffix: true })}
                 </p>
-                {!isExpired ? (<p className="italic text-lg text-gray-700">
-                        Burns out {formatDistanceToNow(chat.expiresAt.toDate(), {addSuffix: true})}
+                {!isExpired ? (
+                    <p className="italic text-lg text-gray-700">
+                        Burns out {formatDistanceToNow(chat.expiresAt.toDate(), { addSuffix: true })}
                     </p>
-                ) : (<p className="italic text-lg text-gray-700">
-                    Burned out {formatDistanceToNow(chat.expiresAt.toDate(), {addSuffix: true})}
-                </p>)}
+                ) : (
+                    <p className="italic text-lg text-gray-700">
+                        Burned out {formatDistanceToNow(chat.expiresAt.toDate(), { addSuffix: true })}
+                    </p>
+                )}
 
                 <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-4 border mt-5">
                     {!isExpired && (
@@ -148,10 +182,7 @@ const ChatPage = () => {
                             {messages.map((msg) => {
                                 const isCurrentUser = msg.userId === auth.currentUser?.displayName;
                                 return (
-                                    <li
-                                        key={msg.id}
-                                        className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
-                                    >
+                                    <li key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                                         <div
                                             className={`min-w-32 max-w-96 p-2 rounded-lg ${
                                                 isCurrentUser ? "bg-cyan-100 text-right" : "bg-green-200 text-left"
@@ -178,16 +209,14 @@ const ChatPage = () => {
                             />
                             <button
                                 onClick={handleSendMessage}
-                                disabled={loading}
+                                disabled={loading || isOffline}
                                 className="px-4 py-2 rounded-md bg-blue-500 text-white font-semibold disabled:bg-gray-400 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
                             >
                                 {loading ? "Sending..." : "Send"}
                             </button>
                         </div>
                     ) : (
-                        <p className="text-red-500 text-center font-semibold">
-                            The flames have burned out, sent messages are no longer available.
-                        </p>
+                        <p className="text-red-500 text-center font-semibold">The flames have burned out.</p>
                     )}
                 </div>
             </div>

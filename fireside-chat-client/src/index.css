@@ -1,12 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body{
+body {
     font-family: 'Quicksand', sans-serif;
 }
 
-.pixelated{
+.pixelated {
     image-rendering: pixelated;
+}
+
+@keyframes fade {
+    0% {
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.animate-fade {
+    animation: fade 2s ease-in-out forwards;
 }

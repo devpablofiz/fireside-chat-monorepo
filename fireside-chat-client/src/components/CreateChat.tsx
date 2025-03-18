@@ -2,11 +2,13 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createChat } from "../services/api";
 import { auth } from "../services/firebase";
+import {useNetworkStatus} from "../context/NetworkStatusProvider.tsx";
 
 const CreateChat = () => {
     const [chatName, setChatName] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const {isOffline} = useNetworkStatus();
 
     const handleCreateChat = useCallback(async () => {
         if (!chatName) return;
@@ -31,7 +33,7 @@ const CreateChat = () => {
     return (
         <div className="mt-10 p-6 min-w-64 bg-white rounded-lg shadow-md flex flex-col justify-center items-center">
             <img src={"/campfire.gif"} alt={"campfire"} className="w-12 sm:w-16 pixelated mb-2 "/>
-            <h2 className="text-xl font-semibold mb-4 text-center">Start a Campfire</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">Start a <span className={"text-amber-900"}>Campfire</span></h2>
             <input
                 type="text"
                 value={chatName}
@@ -41,7 +43,7 @@ const CreateChat = () => {
             />
             <button
                 onClick={handleCreateChat}
-                disabled={loading}
+                disabled={loading || isOffline}
                 className="mt-4 px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
             >
                 {loading ? "Creating..." : "Start"}

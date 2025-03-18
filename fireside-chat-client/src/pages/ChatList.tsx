@@ -7,6 +7,7 @@ import Navbar from "../components/Navbar.tsx";
 import {formatDistanceToNow} from "date-fns";
 import {useAuth} from "../context/AuthProvider.tsx";
 import Login from "../components/Login.tsx";
+import {useNetworkStatus} from "../context/NetworkStatusProvider.tsx";
 
 export interface Chat {
     id: string;
@@ -27,6 +28,7 @@ export interface Message {
 const ChatList = () => {
     const [chats, setChats] = useState<Chat[]>([]);
     const {user} = useAuth();
+    const {isOffline} = useNetworkStatus();
 
     useEffect(() => {
 
@@ -55,8 +57,13 @@ const ChatList = () => {
                 console.error("Error fetching chats:", error);
             }
         };
-
         fetchChats().then(() => console.log("Chats fetched"));
+
+        const interval = setInterval(fetchChats, 5000);
+
+        return () => {
+            clearInterval(interval);
+        };
     }, [user]);
 
     return (
@@ -79,8 +86,8 @@ const ChatList = () => {
                                     out {formatDistanceToNow(chat.expiresAt.toDate(), {addSuffix: true})}</p>)
                         }
                         {!chat.expired ? (
-                            <Link to={`/chat/${chat.id}`} className={"flex items-center justify-center"}>
-                                <button className={"mt-2 px-1.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600"}>
+                            <Link to={`/chat/${chat.id}`} className={"flex items-center justify-center "}>
+                                <button disabled={isOffline} className={"mt-2 px-1.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600 disabled:bg-gray-500"}>
                                     Join!
                                 </button>
                             </Link>

@@ -107,7 +107,7 @@ app.post('/sendMessage', authenticateUser, async (req: AuthenticatedRequest, res
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Extend chat expiration time using Firestore server timestamp
+        // Extend chat expiration time
         await chatRef.update({
             expiresAt: admin.firestore.Timestamp.fromMillis(chatData.expiresAt.toMillis() + 10 * 60 * 1000),
         });
@@ -122,7 +122,7 @@ app.post('/sendMessage', authenticateUser, async (req: AuthenticatedRequest, res
 
 
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
