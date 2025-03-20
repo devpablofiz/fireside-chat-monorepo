@@ -1,27 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
-import { db } from "../services/firebase.ts";
-import { auth } from "../services/firebase";
-import { sendMessage } from "../services/api";
-import { Chat, Message } from "./ChatList.tsx";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
+import {collection, query, orderBy, onSnapshot, doc, getDoc} from "firebase/firestore";
+import {db} from "../services/firebase.ts";
+import {auth} from "../services/firebase";
+import {sendMessage} from "../services/api";
+import {Chat, Message} from "./ChatList.tsx";
 import Navbar from "../components/Navbar.tsx";
-import { formatDistanceToNow } from "date-fns";
+import {formatDistanceToNow} from "date-fns";
 
-import { useAuth } from "../context/AuthProvider.tsx";
+import {useAuth} from "../context/AuthProvider.tsx";
 import Login from "../components/Login.tsx";
-import { useNetworkStatus } from "../context/NetworkStatusProvider.tsx";
+import {useNetworkStatus} from "../context/NetworkStatusProvider.tsx";
 
 const ChatPage = () => {
-    const { chatId } = useParams();
+    const {chatId} = useParams();
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [isExpired, setExpired] = useState(false);
     const navigate = useNavigate();
-    const { user } = useAuth();
-    const { isOffline } = useNetworkStatus();
+    const {user} = useAuth();
+    const {isOffline} = useNetworkStatus();
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const lastMessageId = useRef<string | null>(null);
@@ -66,7 +66,7 @@ const ChatPage = () => {
     }, [chatId, isExpired]);
 
     const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
     }, [messagesEndRef]);
 
     useEffect(() => {
@@ -115,7 +115,7 @@ const ChatPage = () => {
     }, [chatId, fetchChatData, navigate, scrollToBottom, user]);
 
     const showNotification = (sender: string, message: string) => {
-        if ("Notification" in window && Notification.permission === "granted" && !document.hasFocus()) {
+        if ("Notification" in window && Notification.permission === "granted" /*&& !document.hasFocus()*/) {
             new Notification(`New message from ${sender}`, {
                 body: message,
                 icon: "/favicon-192x192.png",
@@ -145,7 +145,7 @@ const ChatPage = () => {
     if (!chat) {
         return (
             <div>
-                <Navbar />
+                <Navbar/>
             </div>
         );
     }
@@ -157,22 +157,22 @@ const ChatPage = () => {
 
     return (
         <div>
-            {!user && <Login />}
-            <Navbar />
+            {!user && <Login/>}
+            <Navbar/>
             <div className="flex flex-col items-center px-6">
-                <img src={"/campfire.gif"} alt={"campfire"} className="w-12 sm:w-16 pixelated mb-2" />
+                <img src={"/campfire.gif"} alt={"campfire"} className="w-12 sm:w-16 pixelated mb-2"/>
                 <h2 className="text-4xl font-bold text-amber-900">Campfire "{chat.chatName}"</h2>
                 <h2 className="text-lg italic text-gray-900">Lit by {chat.userId}</h2>
                 <p className="text-lg text-gray-700 mt-2">
-                    Lit {formatDistanceToNow(chat.createdAt.toDate(), { addSuffix: true })}
+                    Lit {formatDistanceToNow(chat.createdAt.toDate(), {addSuffix: true})}
                 </p>
                 {!isExpired ? (
                     <p className="italic text-lg text-gray-700">
-                        Burns out {formatDistanceToNow(chat.expiresAt.toDate(), { addSuffix: true })}
+                        Burns out {formatDistanceToNow(chat.expiresAt.toDate(), {addSuffix: true})}
                     </p>
                 ) : (
                     <p className="italic text-lg text-gray-700">
-                        Burned out {formatDistanceToNow(chat.expiresAt.toDate(), { addSuffix: true })}
+                        Burned out {formatDistanceToNow(chat.expiresAt.toDate(), {addSuffix: true})}
                     </p>
                 )}
 
@@ -182,7 +182,8 @@ const ChatPage = () => {
                             {messages.map((msg) => {
                                 const isCurrentUser = msg.userId === auth.currentUser?.displayName;
                                 return (
-                                    <li key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                                    <li key={msg.id}
+                                        className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                                         <div
                                             className={`min-w-32 max-w-96 p-2 rounded-lg ${
                                                 isCurrentUser ? "bg-cyan-100 text-right" : "bg-green-200 text-left"
