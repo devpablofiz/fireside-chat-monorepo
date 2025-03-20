@@ -29,7 +29,7 @@ const ChatPage = () => {
     useEffect(() => {
         // Request permission for notifications
         if ("Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
+            Notification.requestPermission().then(r => showNotification("user", JSON.stringify(r)));
         }
     }, []);
 
@@ -114,12 +114,21 @@ const ChatPage = () => {
         }
     }, [chatId, fetchChatData, navigate, scrollToBottom, user]);
 
-    const showNotification = (sender: string, message: string) => {
+    const showNotification = async (sender: string, message: string) => {
         if ("Notification" in window && Notification.permission === "granted" /*&& !document.hasFocus()*/) {
             new Notification(`New message from ${sender}`, {
                 body: message,
                 icon: "/favicon-192x192.png",
             });
+            if ("serviceWorker" in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if (registration) {
+                    await registration.showNotification(`New message from ${sender}`, {
+                        body: message,
+                        icon: "/favicon-192x192.png",
+                    });
+                }
+            }
         }
     };
 
