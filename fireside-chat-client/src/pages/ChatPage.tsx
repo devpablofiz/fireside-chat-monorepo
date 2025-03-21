@@ -19,6 +19,7 @@ const ChatPage = () => {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [isExpired, setExpired] = useState(false);
+
     const navigate = useNavigate();
     const {user} = useAuth();
     const {isOffline} = useNetworkStatus();
@@ -29,7 +30,7 @@ const ChatPage = () => {
     useEffect(() => {
         // Request permission for notifications
         if ("Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission().then(r => showNotification("user", JSON.stringify(r)));
+            Notification.requestPermission();
         }
     }, []);
 
@@ -116,10 +117,6 @@ const ChatPage = () => {
 
     const showNotification = async (sender: string, message: string) => {
         if ("Notification" in window && Notification.permission === "granted" /*&& !document.hasFocus()*/) {
-            new Notification(`New message from ${sender}`, {
-                body: message,
-                icon: "/favicon-192x192.png",
-            });
             if ("serviceWorker" in navigator) {
                 const registration = await navigator.serviceWorker.ready;
                 if (registration) {
@@ -129,6 +126,8 @@ const ChatPage = () => {
                     });
                 }
             }
+        }else{
+            Notification.requestPermission();
         }
     };
 
